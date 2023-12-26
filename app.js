@@ -1,4 +1,5 @@
 const path = require('path');
+const uuid = require('uuid');
 const express = require('express');
 const fs = require('fs');
 
@@ -27,17 +28,26 @@ app.get('/restaurants', (req, res) => {
     });
 });
 
+app.get('/restaurants/:id', (req, res) => {
+    const restaurantId = req.params.id
+    res.render('restaurant-detail', {
+        rid: restaurantId
+    });
+});
+
 app.get('/recommend', (req, res) => {
     res.render('recommend');
 });
 
 app.post('/recommend', (req, res) => {
-    const reataurant = req.body
+    const restaurant = req.body
+    restaurant.id = uuid.v4()
+
     const filePath = path.join(__dirname, 'data', 'restaurants.json');
     const fileData = fs.readFileSync(filePath)
 
     const storedRestaurants = JSON.parse(fileData)
-    storedRestaurants.push(reataurant)
+    storedRestaurants.push(restaurant)
     fs.writeFileSync(filePath, JSON.stringify(storedRestaurants))
     res.redirect('/confirm')
 });
@@ -49,6 +59,7 @@ app.get('/confirm', (req, res) => {
 app.get('/about', (req, res) => {
     res.render('about');
 });
+
 
 
     
