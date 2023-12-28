@@ -3,6 +3,8 @@ const uuid = require("uuid");
 const express = require("express");
 const fs = require("fs");
 
+const {getStoredRestaurants, storeRestaurants} = require("./util/restaurant-data");
+
 app = express();
 app.listen(3000);
 
@@ -17,10 +19,8 @@ app.get("/", (req, res) => {
 });
 
 app.get("/restaurants", (req, res) => {
-  const filePath = path.join(__dirname, "data", "restaurants.json");
-  const fileData = fs.readFileSync(filePath);
 
-  const storedRestaurants = JSON.parse(fileData);
+  const storedRestaurants = getStoredRestaurants();
 
   res.render("restaurants", {
     numberOfRestaurants: storedRestaurants.length,
@@ -30,10 +30,8 @@ app.get("/restaurants", (req, res) => {
 
 app.get("/restaurants/:id", (req, res) => {
   const restaurantId = req.params.id;
-  const filePath = path.join(__dirname, "data", "restaurants.json");
-  const fileData = fs.readFileSync(filePath);
 
-  const storedRestaurants = JSON.parse(fileData);
+  const storedRestaurants = getStoredRestaurants();
   for (const restaurant of storedRestaurants) {
     if (restaurant.id === restaurantId) {
       return res.render("restaurant-detail", {
@@ -41,6 +39,8 @@ app.get("/restaurants/:id", (req, res) => {
       });
     }
   }
+
+  res.status(400).render("404");
 });
 
 app.get("/recommend", (req, res) => {
@@ -51,12 +51,10 @@ app.post("/recommend", (req, res) => {
   const restaurant = req.body;
   restaurant.id = uuid.v4();
 
-  const filePath = path.join(__dirname, "data", "restaurants.json");
-  const fileData = fs.readFileSync(filePath);
 
-  const storedRestaurants = JSON.parse(fileData);
+  const storedRestaurants = getStoredRestaurants();
   storedRestaurants.push(restaurant);
-  fs.writeFileSync(filePath, JSON.stringify(storedRestaurants));
+  storeRestaurants(storedRestaurants)
   res.redirect("/confirm");
 });
 
@@ -66,4 +64,12 @@ app.get("/confirm", (req, res) => {
 
 app.get("/about", (req, res) => {
   res.render("about");
+});
+
+app.use((req, res) => {
+  res.status(404).render("404");
+});
+
+app.use((err, req, res, next) => {
+  res.status(500).render("500");
 });
